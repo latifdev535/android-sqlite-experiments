@@ -1,12 +1,9 @@
 package com.couchbaselabs.droidsqliteexprmnts.experiments;
 
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
-import com.couchbaselabs.droidsqliteexprmnts.ExperimentUIActivity;
 import com.couchbaselabs.droidsqliteexprmnts.helpers.DBHelper;
 import com.couchbaselabs.droidsqliteexprmnts.helpers.ExperimentResult;
-import com.couchbaselabs.droidsqliteexprmnts.helpers.Helper;
 import com.couchbaselabs.droidsqliteexprmnts.helpers.RunnableExperiment;
 
 import java.io.File;
@@ -63,20 +60,17 @@ public class ThreadsSingleConnectionDeadlock extends RunnableExperiment {
         WriterThreadRunnable writerThreadRunnable = new WriterThreadRunnable(sqliteDatabase, readerThread);
         Thread writerThread = new Thread(writerThreadRunnable);
 
-        // start the writer thread first in order to achieve ordering described above
-        Log.d(ExperimentUIActivity.TAG, "Start writer thread");
+        // start the writer thread (which will start the reader thread)
         writerThread.start();
 
-        // join both threads .. this will never unblock in the case of a deadlock
+        // join the writer thread (this will never unblock in the case of a deadlock)
         try {
-            Log.d(ExperimentUIActivity.TAG, "Join both threads");
             writerThread.join();
-            Log.d(ExperimentUIActivity.TAG, "Both threads finished");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        // return "success" .. this will never get returned if there is a deadlock
+        // return "success" (this will never get returned if there is a deadlock)
         experimentResult = new ExperimentResult("Success");
 
         countDownLatch.countDown();
@@ -93,9 +87,7 @@ public class ThreadsSingleConnectionDeadlock extends RunnableExperiment {
 
         @Override
         public void run() {
-            Log.d(ExperimentUIActivity.TAG, "ReaderThreadRunnable.run() started");
             DBHelper.runFakeQuery(sqliteDatabase);
-            Log.d(ExperimentUIActivity.TAG, "ReaderThreadRunnable.run() finished");
         }
 
     }
@@ -115,14 +107,11 @@ public class ThreadsSingleConnectionDeadlock extends RunnableExperiment {
 
             boolean shouldCommit = false;
             try {
-                Log.d(ExperimentUIActivity.TAG, "WriterThreadRunnable.run() started");
                 DBHelper.beginTransaction(sqliteDatabase);
                 DBHelper.doFakeInsert(sqliteDatabase);
                 shouldCommit = true;
-                Log.d(ExperimentUIActivity.TAG, "Start reader thread");
                 readerThread.start();
                 readerThread.join();
-                Log.d(ExperimentUIActivity.TAG, "WriterThreadRunnable.run() finished");
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
