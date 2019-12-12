@@ -75,7 +75,7 @@ public class DBHelper {
     }
 
     public static void endTransaction(SQLiteDatabase sqLiteDatabase, boolean commit) {
-        if (commit == true) {
+        if (commit) {
             sqLiteDatabase.setTransactionSuccessful();
             sqLiteDatabase.endTransaction();
         } else {
